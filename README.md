@@ -31,8 +31,10 @@ Data is polled every 5 minutes. A lock you operate from Home Assistant updates i
    with your Bold account. There are two ways to authorize:
    - **Home Assistant Cloud (easiest).** Nabu Casa has an OAuth client registered with Bold
      and offers it through account linking; Home Assistant shows it as an option
-     automatically. This needs the `cloud` integration to be loaded (it is part of
-     `default_config`; otherwise add `cloud:` to `configuration.yaml`).
+     automatically. **No Nabu Casa subscription or account is needed**, but the `cloud`
+     integration must be loaded (it is part of `default_config`; otherwise add `cloud:` to
+     `configuration.yaml`). You don't have to log in to it. Your Bold tokens are
+     exchanged and refreshed through Nabu Casa's account-link server.
    - **Your own OAuth client.** [Request a custom client](https://sesamsolutions.gitlab.io/public-documentation/integration/oauth-authentication.html)
      from Bold (free) with redirect URI `https://my.home-assistant.io/redirect/oauth`, and
      enter its client ID and secret as application credentials when asked.
