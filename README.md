@@ -12,16 +12,50 @@ Per lock:
 | Entity | Notes |
 |---|---|
 | `lock.<name>` | *Unlock* activates the lock for its activation time, after which it reports locked again. *Lock* ends a running activation. `changed_by` shows who last used the lock. |
+| `event.<name>_activity` | Fires on every activation (with `method`: Pin/Button/Ble/Mqtt/Matter, `result`, `user`, `pin_name`), failed activation, deactivation, bolt locked/unlocked and tamper alert (vibration, rotations, wrong PIN codes). |
 | Battery | Percentage (or Bold's status text if it doesn't send a number). |
-| Battery last measured | Diagnostic. |
-| Bold Connect signal / last seen | Diagnostic, from the gateway the lock uses. |
+| Last locked | Locks with lock detection (Bold Elite) only. |
+| Temperature, battery voltage (idle / under load) | Diagnostic, from the status report the lock sends periodically. |
+| Battery last measured, Bold Connect signal / last seen | Diagnostic. |
 | Firmware update required | On when the firmware is older than Bold requires. |
 
-Every new lock event (activation, deactivation, bolt status) is also fired as a
-`bold_event` on the event bus, with `type`, `device_id`, `device_name`, `user` and `time`.
-Use it in automations, e.g. *notify me when someone opens the front door*.
+### Lock status (Bold Elite)
 
-Data is polled every 5 minutes. A lock you operate from Home Assistant updates immediately.
+Locks with lock detection report whether the bolt is actually thrown, so the lock entity
+shows **locked**, **unlocked** or **unknown** (for instance when the unlock direction isn't
+set in the Bold app). On a Bold SX, which can't detect this, the lock shows unlocked only
+during an activation.
+
+Lock status comes from polling. The default interval is 5 minutes; set it (down to 30
+seconds) under **Configure** on the integration.
+
+### Keep active
+
+Locks with keep-active mode can stay active until a set time:
+
+```yaml
+action: bold.activate
+target:
+  entity_id: lock.front_door
+data:
+  keep_active_until: "2026-09-24 18:00:00"
+```
+
+Without `keep_active_until` this is a normal activation, the same as *Unlock*.
+
+### Events on the bus
+
+Every event above is also fired as `bold_event` on the event bus, with `type` (Bold's own
+event type), `device_id`, `device_name`, `user`, `time` and the extra fields.
+
+### Not possible through the API
+
+Bold's public API is read-only for lock settings (night lock, follow-in protection,
+button auto-disable, tamper sensitivity, …): changing them needs the Bold app. The
+alerts the app shows are available here as activity events.
+
+The Bold Elite also supports Matter. Paired with Home Assistant's Matter integration it
+gives local lock status and control, without the cloud. Bold calls it experimental.
 
 ## Installation
 

@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from aiohttp import ClientError
+import voluptuous as vol
 
+from homeassistant.components.lock import DOMAIN as LOCK_DOMAIN
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import (
@@ -12,15 +14,42 @@ from homeassistant.exceptions import (
     OAuth2TokenRequestError,
     OAuth2TokenRequestReauthError,
 )
-from homeassistant.helpers import aiohttp_client, config_entry_oauth2_flow
+from homeassistant.helpers import (
+    aiohttp_client,
+    config_entry_oauth2_flow,
+    config_validation as cv,
+    service,
+)
 from homeassistant.helpers.config_entry_oauth2_flow import (
     ImplementationUnavailableError,
 )
+from homeassistant.helpers.typing import ConfigType
 
 from .api import BoldApi, BoldAuthError
+from .const import ATTR_KEEP_ACTIVE_UNTIL, DOMAIN, SERVICE_ACTIVATE
 from .coordinator import BoldConfigEntry, BoldCoordinator
 
-PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.LOCK, Platform.SENSOR]
+PLATFORMS: list[Platform] = [
+    Platform.BINARY_SENSOR,
+    Platform.EVENT,
+    Platform.LOCK,
+    Platform.SENSOR,
+]
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Register the bold.activate service."""
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_ACTIVATE,
+        entity_domain=LOCK_DOMAIN,
+        schema={vol.Optional(ATTR_KEEP_ACTIVE_UNTIL): cv.datetime},
+        func="async_activate",
+    )
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: BoldConfigEntry) -> bool:

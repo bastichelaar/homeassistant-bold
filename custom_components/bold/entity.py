@@ -10,7 +10,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, MANUFACTURER
+from .const import DEVICE_TYPE_LOCK, DOMAIN, MANUFACTURER
 from .coordinator import BoldConfigEntry, BoldCoordinator
 
 
@@ -51,6 +51,14 @@ class BoldEntity(CoordinatorEntity[BoldCoordinator]):
 def device_type(device: dict[str, Any]) -> str | None:
     """Return the Bold device type name, e.g. Lock or Gateway."""
     return ((device.get("model") or {}).get("type") or {}).get("name")
+
+
+def is_activatable(device: dict[str, Any]) -> bool:
+    """Return whether the device is a lock that can be operated remotely."""
+    features = device.get("features")
+    if features is None:
+        return device_type(device) == DEVICE_TYPE_LOCK
+    return bool(features.get("activatable")) and features.get("remoteAccess", True)
 
 
 @callback

@@ -8,28 +8,22 @@ entity therefore reports unlocked while that activation window is running.
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from functools import partial
 from typing import Any
 
 from homeassistant.components.lock import LockEntity
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.event import async_track_point_in_utc_time
 from homeassistant.util import dt as dt_util
 
 from .api import BoldCommandError, BoldError, BoldRateLimitError
-from .const import DEFAULT_ACTIVATION_TIME, DEVICE_TYPE_LOCK, DOMAIN
+from .const import DEFAULT_ACTIVATION_TIME, DOMAIN
 from .coordinator import BoldConfigEntry, BoldCoordinator, triggered_by_name
-from .entity import BoldEntity, async_add_per_device, device_type
+from .entity import BoldEntity, async_add_per_device, is_activatable
 
 PARALLEL_UPDATES = 1
-
-
-def _is_activatable(device: dict[str, Any]) -> bool:
-    features = device.get("features")
-    if features is None:
-        return device_type(device) == DEVICE_TYPE_LOCK
-    return bool(features.get("activatable")) and features.get("remoteAccess", True)
 
 
 async def async_setup_entry(
@@ -42,7 +36,7 @@ async def async_setup_entry(
         entry,
         async_add_entities,
         lambda coordinator, device_id, device: (
-            [BoldLock(coordinator, device_id)] if _is_activatable(device) else []
+            [BoldLock(coordinator, device_id)] if is_activatable(device) else []
         ),
     )
 
@@ -69,13 +63,21 @@ class BoldLock(BoldEntity, LockEntity):
 
     @property
     def is_locked(self) -> bool | None:
-        """Unlocked while activated; otherwise use the bolt sensor if present."""
+        """Unlocked while activated; otherwise the bolt position if the lock knows it.
+
+        Locks with lock detection (Bold Elite) report LOCKED, UNLOCKED or UNKNOWN.
+        Without it (Bold SX) the lock is only ever open during an activation.
+        """
         end = self._activation_end
         if end is not None and end > dt_util.utcnow():
             return False
         status = self.device.get("locked")
         if status == "UNLOCKED":
             return False
+        if status == "LOCKED":
+            return True
+        if (self.device.get("features") or {}).get("lockedStatus"):
+            return None
         return True
 
     @property
@@ -93,7 +95,31 @@ class BoldLock(BoldEntity, LockEntity):
 
     async def async_unlock(self, **kwargs: Any) -> None:
         """Activate the lock."""
-        result = await self._command(self.coordinator.api.async_remote_activation)
+        await self.async_activate()
+
+    async def async_activate(self, keep_active_until: datetime | None = None) -> None:
+        """Activate the lock, optionally keeping it active until a given time."""
+        if keep_active_until is not None:
+            if not (self.device.get("features") or {}).get("keepActiveMode"):
+                raise ServiceValidationError(
+                    translation_domain=DOMAIN,
+                    translation_key="keep_active_unsupported",
+                    translation_placeholders={"name": self.device.get("name", "")},
+                )
+            keep_active_until = dt_util.as_utc(keep_active_until)
+            if keep_active_until <= dt_util.utcnow():
+                raise ServiceValidationError(
+                    translation_domain=DOMAIN, translation_key="keep_active_in_past"
+                )
+        result = await self._command(
+            partial(
+                self.coordinator.api.async_remote_activation,
+                keep_active_until=keep_active_until,
+            )
+        )
+        if keep_active_until is not None:
+            self._set_active_until(keep_active_until)
+            return
         seconds = (
             result.get("activationTime")
             or (self.device.get("settings") or {}).get("activationTime")

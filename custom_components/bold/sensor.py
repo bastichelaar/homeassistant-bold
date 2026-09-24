@@ -17,13 +17,15 @@ from homeassistant.const import (
     PERCENTAGE,
     SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
     EntityCategory,
+    UnitOfElectricPotential,
+    UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from .coordinator import BoldConfigEntry, BoldCoordinator
-from .entity import BoldEntity, async_add_per_device
+from .entity import BoldEntity, async_add_per_device, is_activatable
 
 PARALLEL_UPDATES = 0
 
@@ -49,6 +51,7 @@ class BoldSensorDescription(SensorEntityDescription):
 
     value_fn: Callable[[dict[str, Any]], Any]
     exists_fn: Callable[[dict[str, Any]], bool]
+    from_status: bool = False
 
 
 SENSORS: tuple[BoldSensorDescription, ...] = (
@@ -76,6 +79,51 @@ SENSORS: tuple[BoldSensorDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda d: _time(d.get("batteryLastMeasurement")),
         exists_fn=lambda d: "batteryLastMeasurement" in d,
+    ),
+    BoldSensorDescription(
+        key="last_locked",
+        translation_key="last_locked",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        value_fn=lambda d: _time(d.get("lastLocked")),
+        exists_fn=lambda d: bool((d.get("features") or {}).get("lockedStatus"))
+        or "lastLocked" in d,
+    ),
+    # From the periodic DeviceStatus report the lock sends; value_fn gets that event.
+    BoldSensorDescription(
+        key="temperature",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        from_status=True,
+        value_fn=lambda s: s.get("averageTemperature"),
+        exists_fn=is_activatable,
+    ),
+    BoldSensorDescription(
+        key="voltage_idle",
+        translation_key="voltage_idle",
+        device_class=SensorDeviceClass.VOLTAGE,
+        native_unit_of_measurement=UnitOfElectricPotential.MILLIVOLT,
+        suggested_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        suggested_display_precision=2,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        from_status=True,
+        value_fn=lambda s: s.get("voltageIdle"),
+        exists_fn=is_activatable,
+    ),
+    BoldSensorDescription(
+        key="voltage_under_load",
+        translation_key="voltage_under_load",
+        device_class=SensorDeviceClass.VOLTAGE,
+        native_unit_of_measurement=UnitOfElectricPotential.MILLIVOLT,
+        suggested_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        suggested_display_precision=2,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        from_status=True,
+        value_fn=lambda s: s.get("voltageUnderLoad"),
+        exists_fn=is_activatable,
     ),
     BoldSensorDescription(
         key="gateway_signal",
@@ -133,4 +181,7 @@ class BoldSensor(BoldEntity, SensorEntity):
     @property
     def native_value(self) -> Any:
         """Return the sensor value."""
+        if self.entity_description.from_status:
+            status = self.coordinator.data.last_status.get(self.device_id)
+            return self.entity_description.value_fn(status) if status else None
         return self.entity_description.value_fn(self.device)

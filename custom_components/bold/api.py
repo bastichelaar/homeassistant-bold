@@ -122,10 +122,22 @@ class BoldApi:
             or []
         )
 
-    async def async_remote_activation(self, device_id: int) -> dict[str, Any]:
-        """Activate (unlock) a device through its Bold Connect."""
+    async def async_remote_activation(
+        self, device_id: int, keep_active_until: datetime | None = None
+    ) -> dict[str, Any]:
+        """Activate (unlock) a device through its Bold Connect.
+
+        With keep_active_until the lock stays active until then (keep-active mode).
+        """
+        params = (
+            {"keepActiveUntil": keep_active_until.isoformat()}
+            if keep_active_until
+            else None
+        )
         return self._check(
-            await self._request("POST", f"/v1/devices/{device_id}/remote-activation")
+            await self._request(
+                "POST", f"/v1/devices/{device_id}/remote-activation", params
+            )
         )
 
     async def async_remote_deactivation(self, device_id: int) -> dict[str, Any]:

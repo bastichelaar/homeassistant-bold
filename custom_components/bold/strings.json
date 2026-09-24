@@ -45,11 +45,39 @@
       },
       "gateway_last_seen": {
         "name": "Bold Connect last seen"
+      },
+      "last_locked": {
+        "name": "Last locked"
+      },
+      "voltage_idle": {
+        "name": "Battery voltage (idle)"
+      },
+      "voltage_under_load": {
+        "name": "Battery voltage (under load)"
       }
     },
     "binary_sensor": {
       "firmware_required": {
         "name": "Firmware update required"
+      }
+    },
+    "event": {
+      "activity": {
+        "name": "Activity",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "activated": "Activated",
+              "activation_failed": "Activation failed",
+              "deactivated": "Deactivated",
+              "locked": "Locked",
+              "unlocked": "Unlocked",
+              "tamper_vibration": "Tamper alert: vibration",
+              "tamper_rotations": "Tamper alert: rotations",
+              "tamper_faulty_pin": "Tamper alert: wrong PIN codes"
+            }
+          }
+        }
       }
     }
   },
@@ -65,6 +93,37 @@
     },
     "communication_error": {
       "message": "Could not reach Bold: {error}"
+    },
+    "keep_active_unsupported": {
+      "message": "{name} does not support keeping the lock active."
+    },
+    "keep_active_in_past": {
+      "message": "The keep-active time must be in the future."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "How often to poll Bold",
+        "data": {
+          "scan_interval": "Polling interval (seconds)"
+        },
+        "data_description": {
+          "scan_interval": "Lock status (Bold Elite) and battery come from polling. Lower is faster but makes more calls to Bold; minimum 30."
+        }
+      }
+    }
+  },
+  "services": {
+    "activate": {
+      "name": "Activate",
+      "description": "Activates the lock, optionally keeping it active (open) until a given time. Keeping active needs a lock with keep-active mode.",
+      "fields": {
+        "keep_active_until": {
+          "name": "Keep active until",
+          "description": "Keep the lock active until this moment. Leave empty for a normal activation."
+        }
+      }
     }
   }
 }

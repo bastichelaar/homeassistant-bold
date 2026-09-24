@@ -1,0 +1,14 @@
+{
+  "entity": {
+    "event": {
+      "activity": {
+        "default": "mdi:door"
+      }
+    }
+  },
+  "services": {
+    "activate": {
+      "service": "mdi:lock-open-variant"
+    }
+  }
+}

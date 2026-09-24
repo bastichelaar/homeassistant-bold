@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 from typing import Any
 
@@ -16,10 +16,13 @@ from homeassistant.util import dt as dt_util
 from .api import BoldApi, BoldAuthError, BoldError
 from .const import (
     ACCESS_EVENT_TYPES,
+    CONF_SCAN_INTERVAL,
+    DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     EVENT_BOLD,
     EVENT_LOOKBACK,
-    UPDATE_INTERVAL,
+    EVENT_TYPES,
+    STATUS_EVENT_TYPE,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -34,6 +37,10 @@ class BoldData:
     devices: dict[int, dict[str, Any]]
     # Most recent access event per device id (activation, deactivation, locked).
     last_event: dict[int, dict[str, Any]] = field(default_factory=dict)
+    # Most recent DeviceStatus report per device id (temperature, voltage).
+    last_status: dict[int, dict[str, Any]] = field(default_factory=dict)
+    # Events that arrived with this poll, oldest first (empty on the first poll).
+    new_events: list[dict[str, Any]] = field(default_factory=list)
 
 
 class BoldCoordinator(DataUpdateCoordinator[BoldData]):
@@ -50,7 +57,9 @@ class BoldCoordinator(DataUpdateCoordinator[BoldData]):
             _LOGGER,
             config_entry=entry,
             name=DOMAIN,
-            update_interval=UPDATE_INTERVAL,
+            update_interval=timedelta(
+                seconds=entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+            ),
         )
         self.api = api
         self._events_since: datetime | None = None
@@ -66,7 +75,9 @@ class BoldCoordinator(DataUpdateCoordinator[BoldData]):
             raise UpdateFailed(str(err)) from err
 
         data = BoldData(devices={d["id"]: d for d in devices if "id" in d})
-        data.last_event = dict(self.data.last_event) if self.data else {}
+        if self.data:
+            data.last_event = dict(self.data.last_event)
+            data.last_status = dict(self.data.last_status)
         await self._async_update_events(data)
         return data
 
@@ -79,7 +90,7 @@ class BoldCoordinator(DataUpdateCoordinator[BoldData]):
         since = self._events_since or now - EVENT_LOOKBACK
         try:
             events = await self.api.async_get_events(
-                list(data.devices), since, ACCESS_EVENT_TYPES
+                list(data.devices), since, EVENT_TYPES
             )
         except BoldAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
@@ -100,24 +111,42 @@ class BoldCoordinator(DataUpdateCoordinator[BoldData]):
             self._seen_event_ids.add(event_id)
             device_id = (event.get("device") or {}).get("id")
             if device_id is not None:
-                data.last_event[device_id] = event
-            if not first_run:
-                self.hass.bus.async_fire(EVENT_BOLD, _event_payload(event))
+                if event.get("type") == STATUS_EVENT_TYPE:
+                    data.last_status[device_id] = event
+                elif event.get("type") in ACCESS_EVENT_TYPES:
+                    data.last_event[device_id] = event
+            if first_run or event.get("type") == STATUS_EVENT_TYPE:
+                continue
+            data.new_events.append(event)
+            self.hass.bus.async_fire(EVENT_BOLD, event_payload(event))
         # Only ids inside the next lookback window can come back.
         if len(self._seen_event_ids) > 1000:
             self._seen_event_ids = {e.get("id") for e in events}
 
 
-def _event_payload(event: dict[str, Any]) -> dict[str, Any]:
+def event_payload(event: dict[str, Any]) -> dict[str, Any]:
+    """Flatten a Bold event into the attributes HA exposes."""
     device = event.get("device") or {}
-    return {
+    payload = {
         "type": event.get("type"),
         "time": event.get("time"),
         "device_id": device.get("id"),
         "device_name": device.get("name"),
-        "status": event.get("status"),
         "user": triggered_by_name(event),
     }
+    # Only present on some event types: bolt status, how and with what result
+    # the lock was activated, and PIN details.
+    for key, attr in (
+        ("status", "status"),
+        ("method", "method"),
+        ("result", "result"),
+        ("pinName", "pin_name"),
+        ("remoteActivation", "remote"),
+        ("keepActiveUntil", "keep_active_until"),
+    ):
+        if event.get(key) is not None:
+            payload[attr] = event[key]
+    return payload
 
 
 def triggered_by_name(event: dict[str, Any] | None) -> str | None:

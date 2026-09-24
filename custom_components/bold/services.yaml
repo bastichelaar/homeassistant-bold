@@ -1,0 +1,10 @@
+activate:
+  target:
+    entity:
+      integration: bold
+      domain: lock
+  fields:
+    keep_active_until:
+      required: false
+      selector:
+        datetime:

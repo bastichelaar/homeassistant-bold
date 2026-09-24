@@ -45,11 +45,39 @@
       },
       "gateway_last_seen": {
         "name": "Bold Connect laatst gezien"
+      },
+      "last_locked": {
+        "name": "Laatst vergrendeld"
+      },
+      "voltage_idle": {
+        "name": "Batterijspanning (rust)"
+      },
+      "voltage_under_load": {
+        "name": "Batterijspanning (belast)"
       }
     },
     "binary_sensor": {
       "firmware_required": {
         "name": "Firmware-update vereist"
+      }
+    },
+    "event": {
+      "activity": {
+        "name": "Activiteit",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "activated": "Geactiveerd",
+              "activation_failed": "Activatie mislukt",
+              "deactivated": "Gedeactiveerd",
+              "locked": "Vergrendeld",
+              "unlocked": "Ontgrendeld",
+              "tamper_vibration": "Sabotagealarm: trillingen",
+              "tamper_rotations": "Sabotagealarm: draaipogingen",
+              "tamper_faulty_pin": "Sabotagealarm: foute pincodes"
+            }
+          }
+        }
       }
     }
   },
@@ -65,6 +93,37 @@
     },
     "communication_error": {
       "message": "Bold is niet bereikbaar: {error}"
+    },
+    "keep_active_unsupported": {
+      "message": "{name} ondersteunt het actief houden van het slot niet."
+    },
+    "keep_active_in_past": {
+      "message": "Het tijdstip voor actief houden moet in de toekomst liggen."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Hoe vaak Bold wordt bevraagd",
+        "data": {
+          "scan_interval": "Poll-interval (seconden)"
+        },
+        "data_description": {
+          "scan_interval": "Slotstatus (Bold Elite) en batterij komen uit polling. Lager is sneller maar doet meer verzoeken aan Bold; minimaal 30."
+        }
+      }
+    }
+  },
+  "services": {
+    "activate": {
+      "name": "Activeren",
+      "description": "Activeert het slot, eventueel tot een gekozen tijdstip (blijft dan open). Langer actief houden kan alleen bij sloten met keep-active-modus.",
+      "fields": {
+        "keep_active_until": {
+          "name": "Actief houden tot",
+          "description": "Houd het slot actief tot dit moment. Laat leeg voor een gewone activatie."
+        }
+      }
     }
   }
 }
