@@ -9,7 +9,7 @@ from homeassistant.helpers import config_entry_oauth2_flow
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import BoldApi, BoldError
-from .const import DOMAIN, OAUTH2_LEVEL
+from .const import DOMAIN
 
 
 class BoldOAuth2FlowHandler(
@@ -24,11 +24,6 @@ class BoldOAuth2FlowHandler(
     def logger(self) -> logging.Logger:
         """Return logger."""
         return logging.getLogger(__name__)
-
-    @property
-    def extra_authorize_data(self) -> dict[str, Any]:
-        """Ask for a user-level session, which remote activation requires."""
-        return {"level": OAUTH2_LEVEL}
 
     async def async_step_reauth(
         self, entry_data: Mapping[str, Any]

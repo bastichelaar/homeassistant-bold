@@ -27,15 +27,17 @@ Data is polled every 5 minutes. A lock you operate from Home Assistant updates i
 
 1. In HACS, add this repository as a **custom repository** (category *Integration*), or use
    the button above. Install **Bold Smart Lock** and restart Home Assistant.
-2. **Request an OAuth client from Bold.** API keys cannot open locks, so you need a
-   client ID and secret, which Bold gives out free of charge:
-   [request a custom client](https://sesamsolutions.gitlab.io/public-documentation/integration/oauth-authentication.html).
-   Use this as the redirect URI:
-   ```
-   https://my.home-assistant.io/redirect/oauth
-   ```
-3. In Home Assistant go to **Settings → Devices & services → Add integration → Bold Smart
-   Lock**. Enter the client ID and secret, then log in with your Bold account.
+2. Go to **Settings → Devices & services → Add integration → Bold Smart Lock** and log in
+   with your Bold account. There are two ways to authorize:
+   - **Home Assistant Cloud (easiest).** Nabu Casa has an OAuth client registered with Bold
+     and offers it through account linking; Home Assistant shows it as an option
+     automatically. This needs the `cloud` integration to be loaded (it is part of
+     `default_config`; otherwise add `cloud:` to `configuration.yaml`).
+   - **Your own OAuth client.** [Request a custom client](https://sesamsolutions.gitlab.io/public-documentation/integration/oauth-authentication.html)
+     from Bold (free) with redirect URI `https://my.home-assistant.io/redirect/oauth`, and
+     enter its client ID and secret as application credentials when asked.
+
+API keys from the Bold Portal will not work: Bold does not allow them to open locks.
 
 ### Coming from lwestenberg/homeassistant_bold
 

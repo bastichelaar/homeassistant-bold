@@ -1,6 +1,6 @@
 {
   "application_credentials": {
-    "description": "Bold only lets registered OAuth clients open locks. Request a free custom client at [Bold]({request_url}) and give `{redirect_url}` as the redirect URI. Enter the client ID and client secret you receive here."
+    "description": "Easiest is **Home Assistant Cloud** account linking: cancel this dialog, make sure the `cloud` integration is loaded, and pick Home Assistant Cloud when adding Bold. Only enter your own credentials here if you have a custom OAuth client from [Bold]({request_url}), registered with redirect URI `{redirect_url}`."
   },
   "config": {
     "step": {

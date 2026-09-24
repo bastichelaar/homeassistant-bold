@@ -1,6 +1,6 @@
 {
   "application_credentials": {
-    "description": "Bold laat alleen geregistreerde OAuth-clients sloten openen. Vraag gratis een eigen client aan bij [Bold]({request_url}) en geef `{redirect_url}` op als redirect URI. Vul hier de client ID en client secret in die je krijgt."
+    "description": "Het makkelijkst is account linking via **Home Assistant Cloud**: annuleer dit venster, zorg dat de `cloud`-integratie geladen is en kies Home Assistant Cloud bij het toevoegen van Bold. Vul hier alleen eigen gegevens in als je een eigen OAuth-client van [Bold]({request_url}) hebt, geregistreerd met redirect URI `{redirect_url}`."
   },
   "config": {
     "step": {

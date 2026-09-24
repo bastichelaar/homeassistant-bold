@@ -27,7 +27,7 @@ async def _login(hass, hass_client_no_auth, aioclient_mock, result):
     url = URL(result["url"])
     assert str(url.with_query(None)) == OAUTH2_AUTHORIZE
     assert url.query["client_id"] == CLIENT_ID
-    assert url.query["level"] == "user"
+    assert "level" not in url.query
     assert "scope" not in url.query
 
     client = await hass_client_no_auth()
