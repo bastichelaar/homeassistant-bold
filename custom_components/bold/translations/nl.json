@@ -1,0 +1,70 @@
+{
+  "application_credentials": {
+    "description": "Bold laat alleen geregistreerde OAuth-clients sloten openen. Vraag gratis een eigen client aan bij [Bold]({request_url}) en geef `{redirect_url}` op als redirect URI. Vul hier de client ID en client secret in die je krijgt."
+  },
+  "config": {
+    "step": {
+      "pick_implementation": {
+        "title": "Kies een authenticatiemethode"
+      },
+      "reauth_confirm": {
+        "title": "Opnieuw inloggen bij Bold",
+        "description": "Bold accepteert de opgeslagen login niet meer. Log opnieuw in om je sloten te blijven gebruiken."
+      }
+    },
+    "abort": {
+      "already_configured": "Account is al geconfigureerd",
+      "already_in_progress": "De configuratie is al bezig",
+      "oauth_error": "Ongeldige tokengegevens ontvangen.",
+      "oauth_failed": "Fout bij het ophalen van het toegangstoken.",
+      "oauth_timeout": "Time-out bij het ophalen van het OAuth-token.",
+      "oauth_unauthorized": "OAuth-autorisatiefout bij het ophalen van het toegangstoken.",
+      "missing_configuration": "De integratie is niet geconfigureerd. Volg de documentatie.",
+      "missing_credentials": "De integratie heeft application credentials nodig.",
+      "authorize_url_timeout": "Time-out bij het genereren van de autorisatie-URL.",
+      "no_url_available": "Geen URL beschikbaar. Zie de helpsectie voor meer informatie.",
+      "user_rejected_authorize": "Koppeling van account geweigerd.",
+      "reauth_successful": "Opnieuw inloggen gelukt",
+      "cannot_connect": "Kan geen verbinding maken",
+      "wrong_account": "Je bent ingelogd met een ander Bold-account dan waar deze koppeling bij hoort."
+    },
+    "create_entry": {
+      "default": "Authenticatie gelukt"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_status": {
+        "name": "Batterijstatus"
+      },
+      "battery_last_measurement": {
+        "name": "Batterij laatst gemeten"
+      },
+      "gateway_signal": {
+        "name": "Bold Connect-signaal"
+      },
+      "gateway_last_seen": {
+        "name": "Bold Connect laatst gezien"
+      }
+    },
+    "binary_sensor": {
+      "firmware_required": {
+        "name": "Firmware-update vereist"
+      }
+    }
+  },
+  "exceptions": {
+    "no_gateway": {
+      "message": "{name} heeft geen Bold Connect en kan dus niet op afstand bediend worden."
+    },
+    "rate_limited": {
+      "message": "Bold weigert het verzoek: te veel activaties. Bold begrenst het aantal activaties per gebruiker per dag."
+    },
+    "command_failed": {
+      "message": "Bold kon het slot niet bedienen ({code}: {message})."
+    },
+    "communication_error": {
+      "message": "Bold is niet bereikbaar: {error}"
+    }
+  }
+}
