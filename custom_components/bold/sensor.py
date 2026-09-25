@@ -25,7 +25,8 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from .coordinator import BoldConfigEntry, BoldCoordinator
-from .entity import BoldEntity, async_add_per_device, is_activatable
+from .const import DEVICE_TYPE_GATEWAY
+from .entity import BoldEntity, async_add_per_device, device_type, is_activatable
 
 PARALLEL_UPDATES = 0
 
@@ -43,6 +44,11 @@ def _time(value: Any) -> datetime | None:
 
 def _gateway(device: dict[str, Any]) -> dict[str, Any]:
     return device.get("gateway") or {}
+
+
+def _uses_gateway(device: dict[str, Any]) -> bool:
+    # A Bold Connect lists itself as its gateway, with rssi 0; skip that.
+    return bool(_gateway(device)) and device_type(device) != DEVICE_TYPE_GATEWAY
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -133,7 +139,7 @@ SENSORS: tuple[BoldSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda d: _gateway(d).get("rssi"),
-        exists_fn=lambda d: bool(_gateway(d)),
+        exists_fn=_uses_gateway,
     ),
     BoldSensorDescription(
         key="gateway_last_seen",
@@ -141,7 +147,7 @@ SENSORS: tuple[BoldSensorDescription, ...] = (
         device_class=SensorDeviceClass.TIMESTAMP,
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda d: _time(_gateway(d).get("lastSeen")),
-        exists_fn=lambda d: bool(_gateway(d)),
+        exists_fn=_uses_gateway,
     ),
 )
 

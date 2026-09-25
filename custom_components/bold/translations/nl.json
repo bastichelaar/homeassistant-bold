@@ -99,6 +99,15 @@
     },
     "keep_active_in_past": {
       "message": "Het tijdstip voor actief houden moet in de toekomst liggen."
+    },
+    "ble_error": {
+      "message": "De Bold Connect kon {name} niet bereiken via Bluetooth. Waarschijnlijk is het signaal tussen Connect en slot te zwak; zet de Connect dichter bij de deur."
+    },
+    "gateway_unreachable": {
+      "message": "De Bold Connect van {name} is offline of onbereikbaar."
+    },
+    "firmware_outdated": {
+      "message": "{name} heeft eerst een firmware-update nodig in de Bold-app."
     }
   },
   "options": {

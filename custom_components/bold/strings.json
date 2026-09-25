@@ -99,6 +99,15 @@
     },
     "keep_active_in_past": {
       "message": "The keep-active time must be in the future."
+    },
+    "ble_error": {
+      "message": "The Bold Connect could not reach {name} over Bluetooth. The signal between Connect and lock is probably too weak; move the Connect closer to the door."
+    },
+    "gateway_unreachable": {
+      "message": "The Bold Connect of {name} is offline or unreachable."
+    },
+    "firmware_outdated": {
+      "message": "{name} needs a firmware update in the Bold app first."
     }
   },
   "options": {

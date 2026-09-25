@@ -25,6 +25,22 @@ from .entity import BoldEntity, async_add_per_device, is_activatable
 
 PARALLEL_UPDATES = 1
 
+# Bold puts its reason in errorCode or errorMessage (seen: errorCode "Unknown error",
+# errorMessage "BLECommunicationError"), so match both.
+KNOWN_ERRORS = {
+    "blecommunicationerror": "ble_error",
+    "gatewayunreachable": "gateway_unreachable",
+    "gatewaynotfounderror": "gateway_unreachable",
+    "devicefirmwareoutdated": "firmware_outdated",
+}
+
+
+def _known_error(err: BoldCommandError) -> str | None:
+    for text in (err.error_code, err.error_message):
+        if key := KNOWN_ERRORS.get(str(text).lower()):
+            return key
+    return None
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -148,8 +164,9 @@ class BoldLock(BoldEntity, LockEntity):
         except BoldCommandError as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
-                translation_key="command_failed",
+                translation_key=_known_error(err) or "command_failed",
                 translation_placeholders={
+                    "name": self.device.get("name", ""),
                     "code": str(err.error_code),
                     "message": str(err.error_message),
                 },

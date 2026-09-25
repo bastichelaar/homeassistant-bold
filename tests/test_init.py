@@ -88,8 +88,7 @@ async def test_unlock_error_shows_bold_error_code(
         await hass.services.async_call(
             "lock", "unlock", {"entity_id": "lock.voordeur"}, blocking=True
         )
-    assert err.value.translation_key == "command_failed"
-    assert err.value.translation_placeholders["code"] == "GatewayUnreachable"
+    assert err.value.translation_key == "gateway_unreachable"
     assert hass.states.get("lock.voordeur").state == LockState.LOCKED
 
 
@@ -285,3 +284,21 @@ async def test_activate_keep_active_until(
     async_fire_time_changed(hass, until + timedelta(seconds=1))
     await hass.async_block_till_done()
     assert hass.states.get("lock.voordeur").state == LockState.LOCKED
+
+
+@pytest.mark.usefixtures("credentials", "mock_api")
+async def test_ble_error_in_error_message_is_recognised(
+    hass: HomeAssistant, config_entry: MockConfigEntry, aioclient_mock: AiohttpClientMocker
+) -> None:
+    """Bold's reason can sit in errorMessage, as seen on a real Bold Elite."""
+    aioclient_mock.post(
+        ACTIVATE,
+        json={"deviceId": LOCK["id"], "errorCode": "Unknown error", "errorMessage": "BLECommunicationError"},
+    )
+    await _setup(hass, config_entry)
+    with pytest.raises(HomeAssistantError) as err:
+        await hass.services.async_call(
+            "lock", "unlock", {"entity_id": "lock.voordeur"}, blocking=True
+        )
+    assert err.value.translation_key == "ble_error"
+    assert "Bluetooth" in str(err.value)
