@@ -21,6 +21,7 @@ from .const import (
     DOMAIN,
     EVENT_BOLD,
     EVENT_LOOKBACK,
+    EVENT_OVERLAP,
     EVENT_TYPES,
     STATUS_EVENT_TYPE,
 )
@@ -87,7 +88,13 @@ class BoldCoordinator(DataUpdateCoordinator[BoldData]):
             return
         now = dt_util.utcnow()
         first_run = self._events_since is None
-        since = self._events_since or now - EVENT_LOOKBACK
+        # Overlap with the previous poll: an event can reach Bold's cloud well after the
+        # time the lock stamped on it. Seen ids keep the overlap from firing twice.
+        since = (
+            self._events_since - EVENT_OVERLAP
+            if self._events_since
+            else now - EVENT_LOOKBACK
+        )
         try:
             events = await self.api.async_get_events(
                 list(data.devices), since, EVENT_TYPES

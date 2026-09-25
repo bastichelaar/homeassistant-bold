@@ -18,6 +18,7 @@ DEFAULT_SCAN_INTERVAL = 300  # seconds
 MIN_SCAN_INTERVAL = 30
 # At startup, look back far enough to find the latest status report of each lock.
 EVENT_LOOKBACK = timedelta(hours=24)
+EVENT_OVERLAP = timedelta(minutes=5)
 DEFAULT_ACTIVATION_TIME = 7  # seconds, used when Bold does not return one
 
 EVENT_BOLD = "bold_event"

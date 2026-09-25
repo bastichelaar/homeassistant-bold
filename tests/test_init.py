@@ -302,3 +302,21 @@ async def test_ble_error_in_error_message_is_recognised(
         )
     assert err.value.translation_key == "ble_error"
     assert "Bluetooth" in str(err.value)
+
+
+@pytest.mark.usefixtures("credentials", "mock_api")
+async def test_late_event_in_overlap_fires_once(
+    hass: HomeAssistant, config_entry: MockConfigEntry, aioclient_mock: AiohttpClientMocker
+) -> None:
+    """An event that shows up again in the overlap window is only fired once."""
+    await _setup(hass, config_entry)
+    fired = []
+    hass.bus.async_listen("bold_event", fired.append)
+    late = _event(7, "DeviceActivation", result="Success")
+    for _ in range(2):
+        aioclient_mock.clear_requests()
+        aioclient_mock.get(f"{API_URL}/v2/devices", json=[LOCK])
+        aioclient_mock.get(f"{API_URL}/v2/events", json=[late])
+        await config_entry.runtime_data.async_refresh()
+        await hass.async_block_till_done()
+    assert len(fired) == 1
